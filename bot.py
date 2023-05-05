@@ -43,8 +43,14 @@ def follow_user(user):
     with open(followers_file, 'a') as f:
         f.write(str(user.id) + '\n')
 
-# Run the bot indefinitely
-while True:
+# Define the amount of time to run the bot
+bot_runtime = 15 * 60  # 15 minutes
+
+# Keep track of the start time of the bot
+start_time = time.time()
+
+# Run the bot for the specified amount of time
+while time.time() - start_time < bot_runtime:
     # Follow users based on our criteria
     for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
         if should_follow(user) and str(user.id) not in followers:
