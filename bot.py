@@ -14,9 +14,6 @@ api = tweepy.API(auth)
 # Define the keywords to search for in a user's bio
 keywords = ['web3', 'cosmos', 'blockchain', 'crypto']
 
-# Define the amount of time to run the bot
-bot_runtime = 15 * 60  # 15 minutes
-
 # Define the amount of time to sleep between runs
 sleep_time = 60 * 60  # 1 hour
 
@@ -32,7 +29,6 @@ with open(followers_file, 'r') as f:
 
 # Define a function to check if a user matches our criteria
 def should_follow(user):
-    print("Function Should Follow")
     for keyword in keywords:
         if keyword in user.description.lower():
             return True
@@ -40,37 +36,30 @@ def should_follow(user):
 
 # Define a function to follow a user
 def follow_user(user):
-    print("Function Follow User")
     api.create_friendship(user_id=user.id)
     followers.add(str(user.id))
     with open(followers_file, 'a') as f:
         f.write(str(user.id) + '\n')
 
-# Follow users based on our criteria
-for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
-    if should_follow(user) and str(user.id) not in followers:
-        follow_user(user)
+# Run the bot indefinitely
+while True:
+    # Follow users based on our criteria
+    for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
+        if should_follow(user) and str(user.id) not in followers:
+            follow_user(user)
 
-# Run the bot for a specified amount of time
-start_time = time.time()
-print("Bot is running")
-while time.time() - start_time < bot_runtime:
-    time.sleep(60)
+    # Unfollow users we followed more than 'unfollow_time' ago
+    current_time = time.time()
+    with open(followers_file, 'r') as f:
+        for line in f:
+            user_id = line.strip()
+            user = api.get_user(user_id)
+            if current_time - user.created_at.timestamp() > unfollow_time:
+                api.destroy_friendship(user_id)
+                followers.remove(user_id)
+                with open(followers_file, 'w') as f:
+                    f.write('\n'.join(followers))
 
-# Unfollow users we followed more than 'unfollow_time' ago
-current_time = time.time()
-print("User unfollow function")
-with open(followers_file, 'r') as f:
-    for line in f:
-        user_id = line.strip()
-        user = api.get_user(user_id)
-        if current_time - user.created_at.timestamp() > unfollow_time:
-            api.destroy_friendship(user_id)
-            print("User unfollowed")
-            followers.remove(user_id)
-            with open(followers_file, 'w') as f:
-                f.write('\n'.join(followers))
-
-# Sleep for a specified amount of time before running the bot again
-print("Bot is sleeping")
-time.sleep(sleep_time)
+    # Sleep for a specified amount of time before running the bot again
+    print("Bot is sleeping")
+    time.sleep(sleep_time)
