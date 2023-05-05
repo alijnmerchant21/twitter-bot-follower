@@ -29,6 +29,7 @@ with open(followers_file, 'r') as f:
 
 # Define a function to check if a user matches our criteria
 def should_follow(user):
+    print("Bot in should follow")
     for keyword in keywords:
         if keyword in user.description.lower():
             return True
@@ -36,6 +37,7 @@ def should_follow(user):
 
 # Define a function to follow a user
 def follow_user(user):
+    print("Bot in follow user")
     api.create_friendship(user_id=user.id)
     followers.add(str(user.id))
     with open(followers_file, 'a') as f:
