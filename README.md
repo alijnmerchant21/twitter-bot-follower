@@ -22,7 +22,7 @@ A twitter bot to facilitate followers and following
 
 ## Process to create your own bot
 
-1. Create a Twitter developer account and obtain API keys and access tokens. You can do this by following the instructions in Twitter's developer documentation: <https://developer.twitter.com/en/docs/twitter-api/getting-started/about-twitter-api>
+1. Create a Twitter developer account and obtain API keys and access tokens. You can do this by following the instructions in Twitter's [developer documentation](https://developer.twitter.com/en/docs/twitter-api/getting-started/about-twitter-api)
 
 2. Once you have your API keys and access tokens, you can use the Tweepy library to interact with Twitter's API in Python. You can install Tweepy by running `pip install tweepy` in your terminal.
 
