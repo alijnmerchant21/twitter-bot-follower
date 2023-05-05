@@ -12,7 +12,7 @@ auth.set_access_token(config['twitter']['access_token'], config['twitter']['acce
 api = tweepy.API(auth)
 
 # Define the keywords to search for in a user's bio
-keywords = ['web3', 'cosmos', 'blockchain', 'crypto']
+keywords = ['web3', 'blockchain']
 
 # Define the amount of time to sleep between runs
 sleep_time = 60 * 60  # 1 hour
@@ -49,8 +49,38 @@ bot_runtime = 15 * 60  # 15 minutes
 # Keep track of the start time of the bot
 start_time = time.time()
 
-# Run the bot for the specified amount of time
+# Run the bot for 15 minutes when it starts
 while time.time() - start_time < bot_runtime:
+    elapsed_time = time.time() - start_time
+    print(f"Bot is running for {elapsed_time} seconds.")
+    # Follow users based on our criteria
+    for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
+        if should_follow(user) and str(user.id) not in followers:
+            follow_user(user)
+    # Print the number of followers we have
+    print(f"Bot is now following {len(followers)} users.")
+
+    # Unfollow users we followed more than 'unfollow_time' ago
+    current_time = time.time()
+    with open(followers_file, 'r') as f:
+        for line in f:
+            user_id = line.strip()
+            user = api.get_user(user_id)
+            if current_time - user.created_at.timestamp() > unfollow_time:
+                api.destroy_friendship(user_id)
+                followers.remove(user_id)
+                with open(followers_file, 'w') as f:
+                    f.write('\n'.join(followers))
+
+    # Sleep for a specified amount of time before running the bot again
+    print("Bot is sleeping")
+    time.sleep(sleep_time)
+
+
+# Run the bot indefinitely
+while True:
+    elapsed_time = time.time() - start_time
+    print(f"Bot is running for {elapsed_time} seconds.")
     # Follow users based on our criteria
     for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
         if should_follow(user) and str(user.id) not in followers:
@@ -71,3 +101,4 @@ while time.time() - start_time < bot_runtime:
     # Sleep for a specified amount of time before running the bot again
     print("Bot is sleeping")
     time.sleep(sleep_time)
+
