@@ -69,8 +69,10 @@ while time.time() - start_time < bot_runtime:
     for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
         if should_follow(user) and str(user.id) not in followers:
             follow_count = follow_user(user, follow_count)
-            if time.time() - last_reset_time > 24 *
-
+            if time.time() - last_reset_time > 24 * 60 * 60:
+                # Reset the follow count and last reset time
+                follow_count = 0
+                last_reset_time = time.time()
 
     # Unfollow users we followed more than 'unfollow_time' ago
     current_time = time.time()
