@@ -38,12 +38,18 @@ def should_follow(user):
     return False
 
 # Define a function to follow a user
-def follow_user(user):
+def follow_user(user, follow_count):
+    if follow_count >= 400:
+        print("Bot has reached the daily follow limit.")
+        return
     print("Bot in follow user")
     api.create_friendship(user_id=user.id)
     followers.add(str(user.id))
     with open(followers_file, 'a') as f:
         f.write(str(user.id) + '\n')
+    follow_count += 1
+    return follow_count
+
 
 # Define the amount of time to run the bot
 bot_runtime = 15 * 60  # 15 minutes
