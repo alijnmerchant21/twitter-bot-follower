@@ -57,6 +57,10 @@ bot_runtime = 15 * 60  # 15 minutes
 # Keep track of the start time of the bot
 start_time = time.time()
 
+# Define the follow count and the last reset time
+follow_count = 0
+last_reset_time = start_time
+
 # Run the bot for 15 minutes when it starts
 while time.time() - start_time < bot_runtime:
     elapsed_time = time.time() - start_time
@@ -64,9 +68,9 @@ while time.time() - start_time < bot_runtime:
     # Follow users based on our criteria
     for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
         if should_follow(user) and str(user.id) not in followers:
-            follow_user(user)
-    # Print the number of followers we have
-    print(f"Bot is now following {len(followers)} users.")
+            follow_count = follow_user(user, follow_count)
+            if time.time() - last_reset_time > 24 *
+
 
     # Unfollow users we followed more than 'unfollow_time' ago
     current_time = time.time()
