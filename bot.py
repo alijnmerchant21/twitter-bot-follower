@@ -30,6 +30,8 @@ with open(followers_file, 'r') as f:
 # Define a function to check if a user matches our criteria
 def should_follow(user):
     print("Bot in should follow")
+    if user.friends_count < 100:
+        return False
     for keyword in keywords:
         if keyword in user.description.lower():
             return True
