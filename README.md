@@ -2,7 +2,25 @@
 
 A twitter bot to facilitate followers and following
 
-## Steps
+## How to use bot for your account
+
+**If you'd like to use this bot to run your own Twitter Bot, follow these steps:**
+
+1. Clone this repository to your local machine.
+2. Create a Twitter developer account and obtain API keys and access tokens. You can do this by following the instructions in Twitter's [developer documentation](https://developer.twitter.com/en/docs/twitter-api/getting-started/about-twitter-api)
+3. Create a config.ini file and add your credentials to it.
+
+```bash
+[twitter]
+consumer_key = xxxxxxxxxxxxxxxxxxxx
+consumer_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+access_token = xxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxx
+access_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+4. You can simply run the bot through your local computer. If you are feeling brave, you can run it through services like - Digital Occean, AnywherePython, etc. 
+
+## Flow
 
 1. Follow people based on certain keywords in bio.
 2. Repeat process for 15 mins.
