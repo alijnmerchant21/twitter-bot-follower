@@ -1,118 +1,127 @@
 import tweepy
+import datetime
 import time
+import csv
 import configparser
 
-# Load the configuration file
+# Load the API keys and access tokens from the config.ini file
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read("config.ini")
 
-# Authenticate with the Twitter API
-auth = tweepy.OAuthHandler(config['twitter']['consumer_key'], config['twitter']['consumer_secret'])
-auth.set_access_token(config['twitter']['access_token'], config['twitter']['access_secret'])
+consumer_key = config.get("twitter", "consumer_key")
+consumer_secret = config.get("twitter", "consumer_secret")
+access_token = config.get("twitter", "access_token")
+access_secret = config.get("twitter", "access_secret")
+
+# Authenticate to Twitter
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_secret)
+
+# Create API object
 api = tweepy.API(auth)
 
-# Define the keywords to search for in a user's bio
-keywords = ['web3', 'blockchain']
+# Set the minimum number of followers required to follow an account
+MIN_FOLLOWERS = 100
 
-# Define the amount of time to sleep between runs
-sleep_time = 60 * 60  # 1 hour
+# Set the number of accounts to follow in a day
+MAX_FOLLOW_PER_DAY = 400
+FOLLOW_PER_HOUR = 25
 
-# Define the file to store the people we follow
-followers_file = 'followers.txt'
+# Set the number of hours after which to unfollow an account
+UNFOLLOW_AFTER_HOURS = 36
 
-# Define the time to wait before unfollowing a user (36 hours)
-unfollow_time = 36 * 60 * 60
+# Set the name of the CSV file
+CSV_FILE_NAME = "followed_accounts.csv"
 
-# Load the list of people we're already following
-with open(followers_file, 'r') as f:
-    followers = set(line.strip() for line in f)
+# Get the current date
+today = datetime.datetime.now().strftime("%Y-%m-%d")
 
-# Define a function to check if a user matches our criteria
-def should_follow(user):
-    print("Bot in should follow")
-    if user.friends_count < 100:
-        return False
-    for keyword in keywords:
-        if keyword in user.description.lower():
-            return True
-    return False
+# Check if the CSV file exists, and create it if it doesn't
+try:
+    with open(CSV_FILE_NAME, "x", newline="") as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(["id", "display_name", "followed_at"])
+except FileExistsError:
+    pass
 
-# Define a function to follow a user
-def follow_user(user, follow_count):
-    if follow_count >= 400:
-        print("Bot has reached the daily follow limit.")
-        return
-    print("Bot in follow user")
-    api.create_friendship(user_id=user.id)
-    followers.add(str(user.id))
-    with open(followers_file, 'a') as f:
-        f.write(str(user.id) + '\n')
-    follow_count += 1
-    return follow_count
+# Load the list of followed accounts from the CSV file
+followed_accounts = []
+with open(CSV_FILE_NAME, "r") as csvfile:
+    csvreader = csv.reader(csvfile)
+    next(csvreader)  # Skip the header row
+    for row in csvreader:
+        followed_accounts.append({
+            "id": row[0],
+            "display_name": row[1],
+            "followed_at": datetime.datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S")
+        })
 
-# Define the follow count and the last reset time
-follow_count = len(followers)
-last_reset_time = time.time()
+# Follow new accounts
+follow_count = 0
+for follower_id in tweepy.Cursor(api.get_follower_ids).items():
+    try:
+        # Check if the follower has a minimum number of followers
+        user = api.get_user(follower_id)
+        if user.followers_count < MIN_FOLLOWERS:
+            continue
 
-# Run the bot until it follows 400 people
-while follow_count < 400:
-    # Follow 25 users based on our criteria
-    count = 0
-    while count < 25:
-        for user in tweepy.Cursor(api.search_users, q=' '.join(keywords)).items():
-            if should_follow(user) and str(user.id) not in followers:
-                follow_count = follow_user(user, follow_count)
-                count += 1
-                if count >= 25:
-                    break
-        if count < 25:
-            print("Bot is sleeping")
-            time.sleep(sleep_time)
+        # Check if the follower has already been followed
+        if any(account["id"] == str(user.id) for account in followed_accounts):
+            continue
 
-    # Print the number of followers we have
-    print(f"Bot is now following {len(followers)} users.")
+        # Follow the user
+        api.create_friendship(user.id)
+        followed_accounts.append({
+            "id": str(user.id),
+            "display_name": user.name,
+            "followed_at": datetime.datetime.now()
+        })
+        follow_count += 1
+        print(f"Followed user {user.id}")
 
-    # Unfollow users we followed more than 'unfollow_time' ago
-    current_time = time.time()
-    print("Unfollow user")
-    with open(followers_file, 'r') as f:
-        for line in f:
-            user_id = line.strip()
-            print(f"User is {user_id}...") 
-            # print(f"Unfollowing user {user_id}...")
-            user = api.get_user(user_id)
-            if current_time - user.created_at.timestamp() > unfollow_time:
-                api.destroy_friendship(user_id)
-                followers.remove(user_id)
-                with open(followers_file, 'w') as f:
-                    f.write('\n'.join(followers))
+        # Check if the daily follow limit has been reached
+        if follow_count >= MAX_FOLLOW_PER_DAY:
+            break
 
-    # Sleep for a specified amount of time before running the bot again
-    print("Bot is sleeping")
-    time.sleep(sleep_time)
-
-print("Bot has reached the daily follow limit.")
-
-# Unfollow users we followed more than 'unfollow_time' ago
-current_time = time.time()
-with open(followers_file, 'r') as f:
-    for line in f:
-        user_id = line.strip()
-        print(f"Unfollowing user {user_id}...")
-        user = api.get_user(user_id)
-        if current_time - user.created_at.timestamp() > unfollow_time:
-            api.destroy_friendship(user_id)
-            followers.remove(user_id)
-            with open(followers_file, 'w') as f:
-                f.write('\n'.join(followers))
-
-print("Bot has unfollowed all accounts that were followed more than 36 hours ago.")
+    except tweepy.errors.NotFound:
+        print(f"User with ID {follower_id} not found.")
 
 
 
 
+# Save the updated list of followed accounts to the CSV file
+with open(CSV_FILE_NAME, "w", newline="") as csvfile:
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(["id", "display_name", "followed_at"])
+    for account in followed_accounts:
+        csvwriter.writerow([f'"{account["id"]}"', account["display_name"], account["followed_at"].strftime("%Y-%m-%d %H:%M:%S")])
 
 
+# Check if the daily follow limit was reached
+if follow_count >= MAX_FOLLOW_PER_DAY:
+    print("Daily follow limit reached, bot is going to sleep.")
+    time.sleep(3600)  # Sleep for 1 hour
+else:
+    # Followed less than the daily limit, wait for 1 hour before following more accounts
+    print(f"Followed {follow_count} accounts today, waiting for 1 hour before following more.")
+    time.sleep(3600)
 
-# Create steps how to replicate it. 
+# Unfollow accounts that were followed more than UNFOLLOW_AFTER_HOURS ago
+accounts_to_remove = []
+for account in followed_accounts:
+    if (datetime.datetime.now() - account["followed_at"]).total_seconds() >= UNFOLLOW_AFTER_HOURS * 3600:
+        api.destroy_friendship(account["id"])
+        accounts_to_remove.append(account)
+        print(f"Unfollowed user {account['id']}")
+
+# Remove the unfollowed accounts from the list of followed accounts
+for account in accounts_to_remove:
+    followed_accounts.remove(account)
+
+# Save the updated list of followed accounts to the CSV file
+with open(CSV_FILE_NAME, "w", newline="") as csvfile:
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(["id", "display_name", "followed_at"])
+    for account in followed_accounts:
+        csvwriter.writerow([account["id"], account["display_name"], account["followed_at"].strftime("%Y-%m-%d %H:%M:%S")])
 
