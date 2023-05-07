@@ -52,6 +52,6 @@ access_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 6. Define a list of keywords to search for and a list of users to follow.
 
-7. Set up a loop to run for 48 hours, following users based on the specified keywords.
+7. Unfollow people after 36 hours
 
 8. Run the script by calling python bot.py in your terminal.
