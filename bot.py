@@ -95,6 +95,7 @@ current_time = time.time()
 with open(followers_file, 'r') as f:
     for line in f:
         user_id = line.strip()
+        print(f"Unfollowing user {user_id}...")
         user = api.get_user(user_id)
         if current_time - user.created_at.timestamp() > unfollow_time:
             api.destroy_friendship(user_id)
@@ -109,6 +110,6 @@ print("Bot has unfollowed all accounts that were followed more than 36 hours ago
 
 
 
-# Run the bot till it finds 25 followers. Cap at 400 people in a day. Unfollow after 36 hours. 
+
 # Create steps how to replicate it. 
 
