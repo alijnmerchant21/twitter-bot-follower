@@ -18,7 +18,7 @@ access_token = xxxxxxxxxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxx
 access_secret = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-4. You can simply run the bot through your local computer. If you are feeling brave, you can run it through services like - Digital Occean, AnywherePython, etc. 
+4. You can simply run the bot through your local computer. If you are feeling brave, you can run it through services like - Digital Occean, AnywherePython, etc.
 
 ## Flow
 
