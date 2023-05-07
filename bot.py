@@ -74,9 +74,12 @@ while follow_count < 400:
 
     # Unfollow users we followed more than 'unfollow_time' ago
     current_time = time.time()
+    print("Unfollow user")
     with open(followers_file, 'r') as f:
         for line in f:
             user_id = line.strip()
+            print(f"User is {user_id}...") 
+            # print(f"Unfollowing user {user_id}...")
             user = api.get_user(user_id)
             if current_time - user.created_at.timestamp() > unfollow_time:
                 api.destroy_friendship(user_id)
